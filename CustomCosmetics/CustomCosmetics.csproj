@@ -23,12 +23,4 @@
         <PackageReference Include="BepInEx.IL2CPP.MSBuild" Version="2.1.0-rc.1" />
         <PackageReference Include="Reactor" Version="2.3.1" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Compile Remove="CustomCosmetics\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <None Remove="CustomCosmetics\**" />
-    </ItemGroup>
 </Project>
