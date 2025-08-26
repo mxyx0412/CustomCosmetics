@@ -1,0 +1,106 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release Tag (e.g., v1.0.0)"
+        required: true
+        default: "v1.0.0"
+      release_title:
+        description: "Release Title"
+        required: true
+        default: "CustomCosmetics Release"
+      release_body:
+        description: "Release Notes/Changelog"
+        required: true
+        default: "Auto-generated release from GitHub Actions"
+      draft_release:
+        description: "Mark as draft release?"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      prerelease:
+        description: "Mark as prerelease?"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+  schedule:
+    - cron: "0 20 * * 0"
+
+jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: ${{ fromJSON('["2023.11.28", "2024.6.4", "2025.3.25", "latest"]') }}
+
+    steps:
+      - name: Checkout ${{ matrix.branch }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.branch }}
+          submodules: true
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: |
+          dotnet build CustomCosmetics/CustomCosmetics.csproj \
+            --configuration Release \
+            --output ./build-output-${{ matrix.branch }}
+
+      - name: Create zip
+        run: |
+          mkdir -p ./build-output
+          cd ./build-output-${{ matrix.branch }}
+          zip -r ../build-output/CustomCosmetics-${{ matrix.branch }}.zip .
+
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomCosmetics-${{ matrix.branch }}
+          path: ./build-output/CustomCosmetics-${{ matrix.branch }}.zip
+
+      - name: Cleanup
+        run: |
+          rm -rf ./build-output-${{ matrix.branch }}
+          rm -f ./build-output/CustomCosmetics-${{ matrix.branch }}.zip
+        if: always()
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: build-matrix
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.release_tag }}
+          name: ${{ github.event.inputs.release_title }}
+          body: ${{ github.event.inputs.release_body }}
+          draft: ${{ github.event.inputs.draft_release == 'true' }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          files: |
+            ./dist-artifacts/**/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

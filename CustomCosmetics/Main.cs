@@ -34,8 +34,8 @@ public partial class CosmeticsManager : BasePlugin
         SetLogSource(Log);
         Harmony.PatchAll();
 
-        CosmeticsUnlocker = Config.Bind("General",
-            "Cosmetics Unlocker", false, "Unlock all cosmetics in the game, including paid ones.");
+        CosmeticsUnlocker = Config.Bind("General", "Cosmetics Unlocker", false,
+            "Unlock all cosmetics in the game, including paid ones.");
 
         LocalHats = Config.Bind("CustomHats", "Local Hats", false,
             "Enable to only use local hat files without downloading from online repository");
