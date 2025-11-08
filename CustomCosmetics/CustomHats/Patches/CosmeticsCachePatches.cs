@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace CustomCosmetics.CustomHats.Patches;
 
 [HarmonyPatch(typeof(CosmeticsCache))]

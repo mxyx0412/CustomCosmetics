@@ -1,8 +1,7 @@
+using PowerTools;
 using System;
 using System.IO;
 using System.Linq;
-using HarmonyLib;
-using PowerTools;
 using UnityEngine;
 
 namespace CustomCosmetics.CustomHats.Patches;

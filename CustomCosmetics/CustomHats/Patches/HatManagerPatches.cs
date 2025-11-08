@@ -1,7 +1,6 @@
+using Cpp2IL.Core.Extensions;
 using System.Collections.Generic;
 using System.Linq;
-using Cpp2IL.Core.Extensions;
-using HarmonyLib;
 
 namespace CustomCosmetics.CustomHats.Patches;
 
