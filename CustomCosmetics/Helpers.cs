@@ -1,8 +1,8 @@
+using AmongUs.Data;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System;
 using System.IO;
 using System.Reflection;
-using AmongUs.Data;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 
 namespace CustomCosmetics;
