@@ -62,7 +62,7 @@ internal class CosmeticsUnlocker
     {
         public static void Postfix(HatManager __instance)
         {
-            unlockCosmetics(__instance);
+            if (Main.CosmeticsUnlocker.Value) unlockCosmetics(__instance);
         }
     }
 }

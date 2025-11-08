@@ -1,8 +1,8 @@
+using AmongUs.Data;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AmongUs.Data;
-using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using UObject = UnityEngine.Object;
@@ -67,8 +67,7 @@ internal static class HatsTabPatches
         HatsTab hatsTab)
     {
         var isDefaultPackage = CustomHatManager.InnerslothPackageName == packageName;
-        if (!isDefaultPackage)
-            hats = hats.OrderBy(x => x.Item1.name).ToList();
+        if (!isDefaultPackage) hats = hats/*.OrderBy(x => x.Item1.name)*/.ToList();
 
         var offset = yStart;
         if (textTemplate != null)
