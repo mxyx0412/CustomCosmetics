@@ -1,8 +1,8 @@
+using BepInEx;
+using BepInEx.Logging;
 using System;
 using System.Runtime.CompilerServices;
 using System.Text;
-using BepInEx;
-using BepInEx.Logging;
 
 namespace CustomCosmetics;
 
