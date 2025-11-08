@@ -1,10 +1,10 @@
+using BepInEx.Unity.IL2CPP.Utils;
+using Il2CppInterop.Runtime.Attributes;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using BepInEx.Unity.IL2CPP.Utils;
-using Il2CppInterop.Runtime.Attributes;
 using UnityEngine;
 using UnityEngine.Networking;
 using static CustomCosmetics.CustomHats.CustomHatManager;

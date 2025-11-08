@@ -1,5 +1,3 @@
-using HarmonyLib;
-
 namespace CustomCosmetics.CosmeticsUnlocker;
 
 internal class CosmeticsUnlocker
