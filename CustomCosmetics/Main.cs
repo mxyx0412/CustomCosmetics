@@ -26,6 +26,7 @@ public partial class CosmeticsManager : BasePlugin
 
     internal static string RepositoryUrl => Repository.Value.GithubUrl();
     public static ConfigEntry<bool> CosmeticsUnlocker { get; set; }
+    public static ConfigEntry<bool> EnableCustomHats { get; set; }
     public static ConfigEntry<string> Repository { get; set; }
     public static ConfigEntry<bool> LocalHats { get; set; }
 
@@ -37,14 +38,20 @@ public partial class CosmeticsManager : BasePlugin
         CosmeticsUnlocker = Config.Bind("General", "Cosmetics Unlocker", false,
             "Unlock all cosmetics in the game, including paid ones.");
 
+        EnableCustomHats = Config.Bind("CustomHats", "Enable Custom Hats", true,
+            "Enable custom hats");
         LocalHats = Config.Bind("CustomHats", "Local Hats", false,
             "Enable to only use local hat files without downloading from online repository");
         Repository = Config.Bind("CustomHats", "Repository Source", "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master",
             "URL for downloading custom hats when Local Hats is disabled");
 
         Instance = this;
-        CustomHatManager.LoadHats();
+        LoadModules();
         Message("CosmeticsManager Loading!");
     }
 
+    private static void LoadModules()
+    {
+        if (EnableCustomHats.Value) CustomHatManager.LoadHats();
+    }
 }
