@@ -126,9 +126,7 @@ internal static class HatParentPatches
         else if (__instance.FrontLayer.sprite == hatViewData.ClimbImage ||
                  __instance.FrontLayer.sprite == hatViewData.LeftClimbImage)
         {
-            var spriteAnimNodeSync = __instance.SpriteSyncNode != null
-                ? __instance.SpriteSyncNode
-                : __instance.GetComponent<SpriteAnimNodeSync>();
+            var spriteAnimNodeSync = __instance.SpriteSyncNode ?? __instance.GetComponent<SpriteAnimNodeSync>();
             if (spriteAnimNodeSync) spriteAnimNodeSync.NodeId = 0;
         }
 
