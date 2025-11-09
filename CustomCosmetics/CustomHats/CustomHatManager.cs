@@ -117,7 +117,7 @@ public static class CustomHatManager
     private static Sprite CreateHatSprite(string path)
     {
         var texture = loadTextureFromDisk(Path.Combine(CosmeticsManager.CustomHatsDir, path)) ??
-                      loadTextureFromResources(path);
+                      LoadTextureFromResources(path);
         if (texture == null) return null;
         var sprite = Sprite.Create(texture,
             new Rect(0, 0, texture.width, texture.height),

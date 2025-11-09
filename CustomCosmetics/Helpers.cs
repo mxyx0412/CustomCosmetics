@@ -30,7 +30,9 @@ internal static class Helpers
         return url;
     }
 
-    public static unsafe Texture2D loadTextureFromResources(string path)
+#pragma warning disable IDE0380
+    public static unsafe Texture2D LoadTextureFromResources(string path)
+#pragma warning restore IDE0380
     {
         try
         {

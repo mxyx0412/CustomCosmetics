@@ -3,6 +3,13 @@ namespace CustomCosmetics.CustomHats.Patches;
 [HarmonyPatch(typeof(PlayerPhysics))]
 internal static class PlayerPhysicsPatches
 {
+    [HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.HandleAnimation))]
+    [HarmonyPostfix]
+    private static bool HandleAnimationPrefix(PlayerPhysics __instance)
+    {
+        return __instance?.myPlayer != null && __instance.myPlayer.cosmetics?.skin != null;
+    }
+
     [HarmonyPatch(nameof(PlayerPhysics.HandleAnimation))]
     [HarmonyPostfix]
     private static void HandleAnimationPostfix(PlayerPhysics __instance)

@@ -62,7 +62,7 @@ internal class Logger
             case LogLevel.Fatal: logSource.LogFatal(logMessage); break;
             case LogLevel.Info: logSource.LogInfo(logMessage); break;
             case LogLevel.Debug: logSource.LogDebug(logMessage); break;
-            default: System.Console.WriteLine($"[Error] {logMessage}"); break;
+            default: System.Console.WriteLine($"{logMessage}"); break;
         }
     }
 }
