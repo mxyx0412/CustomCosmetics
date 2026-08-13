@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text.Json.Serialization;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -11,26 +9,16 @@ namespace CustomCosmetics.CustomHats;
 public static class CustomHatManager
 {
     public const string InnerslothPackageName = "Innersloth Hats";
-    public const string ManifestFileName = "CustomHats.json";
 
     internal static List<CustomHatConfig> UnregisteredHats = new();
+    // cache key: hat.name
     internal static readonly Dictionary<string, HatViewData> ViewDataCache = new();
     internal static readonly Dictionary<string, HatExtension> ExtensionCache = new();
-    private static Material cachedShader;
-
-    private static readonly HatsLoader Loader;
-
-    static CustomHatManager()
-    {
-        Loader = CosmeticsManager.Instance.AddComponent<HatsLoader>();
-    }
+    internal static readonly Dictionary<string, string> AuthorCache = new();
+    internal static readonly Dictionary<string, string> PackageDisplayNames = new();
+    internal static readonly Dictionary<string, int> PackagePriorities = new();
 
     internal static HatExtension TestExtension { get; private set; }
-
-    internal static void LoadHats()
-    {
-        Loader.FetchHats();
-    }
 
     internal static bool TryGetCached(this HatParent hatParent, out HatViewData asset)
     {
@@ -44,45 +32,38 @@ public static class CustomHatManager
         return ViewDataCache.TryGetValue(hat.name, out asset);
     }
 
-    internal static bool IsCached(this HatData hat)
-    {
-        return ViewDataCache.ContainsKey(hat.name);
-    }
-
-    internal static bool IsCached(this HatParent hatParent)
-    {
-        return hatParent.Hat.IsCached();
-    }
+    internal static bool IsCached(this HatData hat) => ViewDataCache.ContainsKey(hat.name);
+    internal static bool IsCached(this HatParent hatParent) => hatParent.Hat != null && hatParent.Hat.IsCached();
 
     internal static HatData CreateHatBehaviour(CustomHatConfig ch, bool testOnly = false)
     {
-        if (cachedShader == null) cachedShader = DestroyableSingleton<HatManager>.Instance.PlayerMaterial;
         var viewData = ViewDataCache[ch.Name] = ScriptableObject.CreateInstance<HatViewData>();
         var hat = ScriptableObject.CreateInstance<HatData>();
 
-        viewData.MainImage = CreateHatSprite(ch.Resource);
+        viewData.MainImage = CreateHatSprite(ch.Resource, ch.AutoScale);
         if (viewData.MainImage == null)
             throw new FileNotFoundException("File not downloaded yet");
         viewData.FloorImage = viewData.MainImage;
+
         if (ch.BackResource != null)
         {
-            viewData.BackImage = CreateHatSprite(ch.BackResource);
+            viewData.BackImage = CreateHatSprite(ch.BackResource, ch.AutoScale);
             ch.Behind = true;
         }
-
         if (ch.ClimbResource != null)
         {
-            viewData.ClimbImage = CreateHatSprite(ch.ClimbResource);
+            viewData.ClimbImage = CreateHatSprite(ch.ClimbResource, ch.AutoScale);
             viewData.LeftClimbImage = viewData.ClimbImage;
         }
 
         hat.name = ch.Name;
-        hat.displayOrder = 99;
+        hat.displayOrder = 0;
         hat.ProductId = "cmh_" + ch.Name.Replace(' ', '_');
         hat.InFront = !ch.Behind;
         hat.NoBounce = !ch.Bounce;
         hat.ChipOffset = new Vector2(0f, 0.2f);
         hat.Free = true;
+        viewData.MatchPlayerColor = ch.Adaptive;
 
         var extend = new HatExtension
         {
@@ -91,12 +72,12 @@ public static class CustomHatManager
             Condition = ch.Condition ?? "none",
             Adaptive = ch.Adaptive
         };
+        AuthorCache[hat.name] = extend.Author;
 
         if (ch.FlipResource != null)
-            extend.FlipImage = CreateHatSprite(ch.FlipResource);
-
+            extend.FlipImage = CreateHatSprite(ch.FlipResource, ch.AutoScale);
         if (ch.BackFlipResource != null)
-            extend.BackFlipImage = CreateHatSprite(ch.BackFlipResource);
+            extend.BackFlipImage = CreateHatSprite(ch.BackFlipResource, ch.AutoScale);
 
         if (testOnly)
         {
@@ -113,20 +94,17 @@ public static class CustomHatManager
         return hat;
     }
 
-    private static Sprite CreateHatSprite(string path)
+    // tutorial test hat: loads PNGs from Cosmetics/CustomHats/Test
+    private static Sprite CreateHatSprite(string path, bool autoScale = true)
     {
-        var texture = loadTextureFromDisk(Path.Combine(CosmeticsManager.CustomHatsDir, path)) ??
-                      LoadTextureFromResources(path);
+        var texture = Core.CosmeticsLoader.LoadTex(
+            Path.Combine(CosmeticsManager.CustomHatsDir, path))
+            ?? Helpers.LoadTextureFromResources(path);
         if (texture == null) return null;
-        var sprite = Sprite.Create(texture,
-            new Rect(0, 0, texture.width, texture.height),
+        // default: 300px base ppu; off: raw pixels (ppu 100)
+        return Core.CosmeticsLoader.MakeSprite(texture,
             new Vector2(0.53f, 0.575f),
-            texture.width * 0.375f);
-        if (sprite == null) return null;
-        texture.hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
-        sprite.hideFlags |= HideFlags.HideAndDontSave | HideFlags.DontUnloadUnusedAsset;
-
-        return sprite;
+            autoScale ? texture.width * 0.375f : 100f);
     }
 
     public static List<CustomHatConfig> CreateHatDetailsFromFileNames(string[] fileNames, bool fromDisk = false)
@@ -146,19 +124,12 @@ public static class CustomHatManager
             if (options.Contains("back") && options.Contains("flip"))
                 backFlips[p[0]] = fileName;
             else if (options.Contains("climb"))
-            {
                 climbs[p[0]] = fileName;
-            }
             else if (options.Contains("back"))
-            {
                 backs[p[0]] = fileName;
-            }
             else if (options.Contains("flip"))
-            {
                 flips[p[0]] = fileName;
-            }
             else
-            {
                 fronts[p[0]] = new CustomHatConfig
                 {
                     Resource = fileName,
@@ -167,11 +138,9 @@ public static class CustomHatManager
                     Adaptive = options.Contains("adaptive"),
                     Behind = options.Contains("behind")
                 };
-            }
         }
 
         var hats = new List<CustomHatConfig>();
-
         foreach (var frontKvP in fronts)
         {
             var k = frontKvP.Key;
@@ -187,114 +156,28 @@ public static class CustomHatManager
             if (hat.BackResource != null) hat.Behind = true;
             hats.Add(hat);
         }
-
         return hats;
-    }
-
-    internal static List<CustomHatConfig> SanitizeHats(HatsConfigFile response)
-    {
-        foreach (var hat in response.Hats)
-        {
-            hat.Resource = SanitizeFileName(hat.Resource);
-            hat.BackResource = SanitizeFileName(hat.BackResource);
-            hat.ClimbResource = SanitizeFileName(hat.ClimbResource);
-            hat.FlipResource = SanitizeFileName(hat.FlipResource);
-            hat.BackFlipResource = SanitizeFileName(hat.BackFlipResource);
-        }
-
-        return response.Hats;
-    }
-
-    private static string SanitizeFileName(string path)
-    {
-        if (path == null || !path.EndsWith(".png")) return null;
-        return path.Replace("\\", "")
-            .Replace("/", "")
-            .Replace("*", "")
-            .Replace("..", "");
-    }
-
-    private static bool ResourceRequireDownload(string resFile, string resHash, HashAlgorithm algorithm)
-    {
-        var filePath = Path.Combine(CosmeticsManager.CustomHatsDir, resFile);
-        if (resHash == null || !File.Exists(filePath))
-            return true;
-        using var stream = File.OpenRead(filePath);
-        var hash = BitConverter.ToString(algorithm.ComputeHash(stream))
-            .Replace("-", string.Empty)
-            .ToLowerInvariant();
-        return !resHash.Equals(hash);
     }
 
     internal static List<string> GenerateDownloadList(List<CustomHatConfig> hats)
     {
-        var algorithm = MD5.Create();
         var toDownload = new List<string>();
-
         foreach (var hat in hats)
         {
-            var files = new List<Tuple<string, string>>
+            var files = new List<(string, string)>
             {
-                new(hat.Resource, hat.ResHashA),
-                new(hat.BackResource, hat.ResHashB),
-                new(hat.ClimbResource, hat.ResHashC),
-                new(hat.FlipResource, hat.ResHashF),
-                new(hat.BackFlipResource, hat.ResHashBf)
+                (hat.Resource, hat.ResHashA),
+                (hat.BackResource, hat.ResHashB),
+                (hat.ClimbResource, hat.ResHashC),
+                (hat.FlipResource, hat.ResHashF),
+                (hat.BackFlipResource, hat.ResHashBf)
             };
             foreach (var (fileName, fileHash) in files)
             {
-                if (fileName != null && ResourceRequireDownload(fileName, fileHash, algorithm))
+                if (fileName != null && Core.CosmeticsLoader.NeedDownload(fileName, fileHash, CosmeticsManager.CustomHatsDir))
                     toDownload.Add(fileName);
             }
         }
-
         return toDownload;
-    }
-}
-
-public class HatsConfigFile
-{
-    [JsonPropertyName("hats")] public List<CustomHatConfig> Hats { get; set; }
-}
-
-public class CustomHatConfig
-{
-    [JsonPropertyName("author")] public string Author { get; set; }
-    [JsonPropertyName("name")] public string Name { get; set; }
-    [JsonPropertyName("package")] public string Package { get; set; }
-    [JsonPropertyName("condition")] public string Condition { get; set; }
-    [JsonPropertyName("adaptive")] public bool Adaptive { get; set; }
-    [JsonPropertyName("bounce")] public bool Bounce { get; set; }
-    [JsonPropertyName("behind")] public bool Behind { get; set; }
-    [JsonPropertyName("resource")] public string Resource { get; set; }
-    [JsonPropertyName("backresource")] public string BackResource { get; set; }
-    [JsonPropertyName("climbresource")] public string ClimbResource { get; set; }
-    [JsonPropertyName("flipresource")] public string FlipResource { get; set; }
-    [JsonPropertyName("backflipresource")] public string BackFlipResource { get; set; }
-    [JsonPropertyName("reshasha")] public string ResHashA { get; set; }
-    [JsonPropertyName("reshashb")] public string ResHashB { get; set; }
-    [JsonPropertyName("reshashc")] public string ResHashC { get; set; }
-    [JsonPropertyName("reshashf")] public string ResHashF { get; set; }
-    [JsonPropertyName("reshashbf")] public string ResHashBf { get; set; }
-}
-
-public class HatExtension
-{
-    public string Author { get; set; }
-    public string Package { get; set; }
-    public string Condition { get; set; }
-    public Sprite FlipImage { get; set; }
-    public Sprite BackFlipImage { get; set; }
-    public bool Adaptive { get; set; }
-}
-
-public static class HatDataExtensions
-{
-    public static HatExtension GetHatExtension(this HatData hat)
-    {
-        if (CustomHatManager.TestExtension != null && CustomHatManager.TestExtension.Condition.Equals(hat.name))
-            return CustomHatManager.TestExtension;
-
-        return CustomHatManager.ExtensionCache.TryGetValue(hat.name, out var extension) ? extension : null;
     }
 }

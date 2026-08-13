@@ -31,7 +31,7 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool SetHatPrefix(HatParent __instance, int color)
     {
-        if (!__instance.IsCached()) return true;
+        if (!CustomHatManager.ViewDataCache.ContainsKey(__instance.Hat.name)) return true;
         __instance.viewAsset = null;
         __instance.PopulateFromViewData();
         __instance.SetMaterialColor(color);
@@ -42,13 +42,12 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool UpdateMaterialPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var asset)) return true;
-        var extend = __instance.Hat.GetHatExtension();
-        if (asset && extend != null && extend.Adaptive)
+        if (!__instance.Hat) return true;
+        if (!CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var asset)) return true;
+        if (asset && asset.MatchPlayerColor)
         {
             __instance.FrontLayer.sharedMaterial = DestroyableSingleton<HatManager>.Instance.PlayerMaterial;
-            if (__instance.BackLayer)
-                __instance.BackLayer.sharedMaterial = DestroyableSingleton<HatManager>.Instance.PlayerMaterial;
+            if (__instance.BackLayer) __instance.BackLayer.sharedMaterial = DestroyableSingleton<HatManager>.Instance.PlayerMaterial;
         }
         else
         {
@@ -59,8 +58,7 @@ internal static class HatParentPatches
 
         var colorId = __instance.matProperties.ColorId;
         PlayerMaterial.SetColors(colorId, __instance.FrontLayer);
-        if (__instance.BackLayer)
-            PlayerMaterial.SetColors(colorId, __instance.BackLayer);
+        if (__instance.BackLayer) PlayerMaterial.SetColors(colorId, __instance.BackLayer);
 
         __instance.FrontLayer.material.SetInt(PlayerMaterial.MaskLayer, __instance.matProperties.MaskLayer);
         if (__instance.BackLayer)
@@ -86,20 +84,16 @@ internal static class HatParentPatches
 
                 break;
             default:
-                if (__instance.FrontLayer)
-                    __instance.FrontLayer.maskInteraction = SpriteMaskInteraction.None;
+                if (__instance.FrontLayer) __instance.FrontLayer.maskInteraction = SpriteMaskInteraction.None;
 
-                if (__instance.BackLayer)
-                    __instance.BackLayer.maskInteraction = SpriteMaskInteraction.None;
+                if (__instance.BackLayer) __instance.BackLayer.maskInteraction = SpriteMaskInteraction.None;
 
                 break;
         }
-
         if (__instance.matProperties.MaskLayer > 0) return false;
         PlayerMaterial.SetMaskLayerBasedOnLocalPlayer(__instance.FrontLayer, __instance.matProperties.IsLocalPlayer);
         if (!__instance.BackLayer) return false;
         PlayerMaterial.SetMaskLayerBasedOnLocalPlayer(__instance.BackLayer, __instance.matProperties.IsLocalPlayer);
-
         return false;
     }
 
@@ -108,15 +102,13 @@ internal static class HatParentPatches
     private static bool LateUpdatePrefix(HatParent __instance)
     {
         if (!__instance.Parent || !__instance.Hat) return false;
-        if (!__instance.TryGetCached(out var hatViewData)) return true;
+        if (!CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var hatViewData)) return true;
         if (__instance.FrontLayer.sprite != hatViewData.ClimbImage &&
             __instance.FrontLayer.sprite != hatViewData.FloorImage)
         {
             if ((__instance.Hat.InFront || hatViewData.BackImage) && hatViewData.LeftMainImage)
-            {
                 __instance.FrontLayer.sprite =
                     __instance.Parent.flipX ? hatViewData.LeftMainImage : hatViewData.MainImage;
-            }
 
             if (hatViewData.BackImage && hatViewData.LeftBackImage)
             {
@@ -146,7 +138,8 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool SetFloorAnimPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var hatViewData)) return true;
+        if (!__instance.Hat) return true;
+        if (!CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var hatViewData)) return true;
         __instance.BackLayer.enabled = false;
         __instance.FrontLayer.enabled = true;
         __instance.FrontLayer.sprite = hatViewData.FloorImage;
@@ -158,7 +151,7 @@ internal static class HatParentPatches
     private static bool SetIdleAnimPrefix(HatParent __instance, int colorId)
     {
         if (!__instance.Hat) return false;
-        if (!__instance.IsCached()) return true;
+        if (!CustomHatManager.ViewDataCache.ContainsKey(__instance.Hat.name)) return true;
         __instance.viewAsset = null;
         __instance.PopulateFromViewData();
         __instance.SetMaterialColor(colorId);
@@ -169,7 +162,8 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool SetClimbAnimPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var hatViewData)) return true;
+        if (!__instance.Hat) return true;
+        if (!CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var hatViewData)) return true;
         if (!__instance.options.ShowForClimb) return false;
         __instance.BackLayer.enabled = false;
         __instance.FrontLayer.enabled = true;
@@ -179,16 +173,16 @@ internal static class HatParentPatches
 
     [HarmonyPatch(nameof(HatParent.PopulateFromViewData))]
     [HarmonyPrefix]
-    private static bool PopulateFromHatViewDataPrefix(HatParent __instance)
+    private static bool PopulateFromViewDataPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var asset)) return true;
+        if (!__instance.Hat) return true;
+        if (!CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var asset)) return true;
         __instance.UpdateMaterial();
 
         var spriteAnimNodeSync = __instance.SpriteSyncNode
             ? __instance.SpriteSyncNode
             : __instance.GetComponent<SpriteAnimNodeSync>();
-        if (spriteAnimNodeSync)
-            spriteAnimNodeSync.NodeId = __instance.Hat.NoBounce ? 1 : 0;
+        if (spriteAnimNodeSync) spriteAnimNodeSync.NodeId = __instance.Hat.NoBounce ? 1 : 0;
 
         if (__instance.Hat.InFront)
         {
