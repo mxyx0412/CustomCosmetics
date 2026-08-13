@@ -1,58 +1,38 @@
 namespace CustomCosmetics.CosmeticsUnlocker;
 
-internal class CosmeticsUnlocker
+internal static class CosmeticsUnlockerPatches
 {
-    public static void unlockCosmetics(HatManager hatManager)
+    private static void UnlockCosmetics(HatManager hatManager)
     {
         foreach (var bundle in hatManager.allBundles)
-        { //Bundles
             bundle.Free = true;
-        }
 
-        foreach (var featuredBundle in hatManager.allFeaturedBundles)
-        { //Featured Bundles
-            featuredBundle.Free = true;
-        }
+        foreach (var bundle in hatManager.allFeaturedBundles)
+            bundle.Free = true;
 
-        foreach (var featuredCube in hatManager.allFeaturedCubes)
-        { //Featured Cosmicubes
-            featuredCube.Free = true;
-        }
+        foreach (var cube in hatManager.allFeaturedCubes)
+            cube.Free = true;
 
-        foreach (var featuredItem in hatManager.allFeaturedItems)
-        { //Featured Items
-            featuredItem.Free = true;
-        }
+        foreach (var item in hatManager.allFeaturedItems)
+            item.Free = true;
 
         foreach (var hat in hatManager.allHats)
-        { //Hats
             hat.Free = true;
-        }
 
-        foreach (var nameplate in hatManager.allNamePlates)
-        { //NamePlates
-            nameplate.Free = true;
-        }
+        foreach (var plate in hatManager.allNamePlates)
+            plate.Free = true;
 
         foreach (var pet in hatManager.allPets)
-        { //Pets
             pet.Free = true;
-        }
 
         foreach (var skin in hatManager.allSkins)
-        { //Skins
             skin.Free = true;
-        }
 
-        foreach (var starBundle in hatManager.allStarBundles)
-        { //Star Bundles
-            starBundle.price = 0; // StarBundles don't have a Free property, so price is changed instead
-        }
+        foreach (var bundle in hatManager.allStarBundles)
+            bundle.price = 0;
 
         foreach (var visor in hatManager.allVisors)
-        { //Visors
             visor.Free = true;
-        }
     }
 
     [HarmonyPatch(typeof(HatManager), nameof(HatManager.Initialize))]
@@ -60,7 +40,8 @@ internal class CosmeticsUnlocker
     {
         public static void Postfix(HatManager __instance)
         {
-            if (Main.CosmeticsUnlocker.Value) unlockCosmetics(__instance);
+            if (Main.Unlocker.Value)
+                UnlockCosmetics(__instance);
         }
     }
 }
