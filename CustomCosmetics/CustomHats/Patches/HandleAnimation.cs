@@ -4,7 +4,7 @@ namespace CustomCosmetics.CustomHats.Patches;
 internal static class PlayerPhysicsPatches
 {
     [HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.HandleAnimation))]
-    [HarmonyPostfix]
+    [HarmonyPrefix]
     private static bool HandleAnimationPrefix(PlayerPhysics __instance)
     {
         return __instance?.myPlayer != null && __instance.myPlayer.cosmetics?.skin != null;
@@ -27,9 +27,7 @@ internal static class PlayerPhysicsPatches
             if (__instance.FlipX)
                 hatParent.FrontLayer.sprite = extend.FlipImage;
             else
-            {
                 hatParent.FrontLayer.sprite = viewData.MainImage;
-            }
         }
 
         if (extend.BackFlipImage != null)
@@ -37,9 +35,7 @@ internal static class PlayerPhysicsPatches
             if (__instance.FlipX)
                 hatParent.BackLayer.sprite = extend.BackFlipImage;
             else
-            {
                 hatParent.BackLayer.sprite = viewData.BackImage;
-            }
         }
     }
 }

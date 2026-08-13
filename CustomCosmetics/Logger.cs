@@ -8,47 +8,32 @@ namespace CustomCosmetics;
 
 internal class Logger
 {
-    private static ManualLogSource logSource { get; set; }
+    private static ManualLogSource _logSource { get; set; }
 
-    internal static void SetLogSource(ManualLogSource Source)
+    internal static void SetLogSource(ManualLogSource source)
     {
         if (ConsoleManager.ConsoleEnabled) System.Console.OutputEncoding = Encoding.UTF8;
-        logSource = Source;
+        _logSource = source;
     }
 
-    public static void Info(object text, [CallerMemberName] string Tag = "")
+    public static void Message(object text, [CallerMemberName] string tag = "")
     {
-        SendLog(text.ToString(), Tag);
+        SendLog(text.ToString(), tag, LogLevel.Message);
     }
 
-    public static void Message(object text, [CallerMemberName] string Tag = "")
+    public static void Warn(object text, [CallerMemberName] string tag = "")
     {
-        SendLog(text.ToString(), Tag, LogLevel.Message);
+        SendLog(text.ToString(), tag, LogLevel.Warning);
     }
 
-    public static void Warn(object text, [CallerMemberName] string Tag = "")
+    public static void Error(object text, [CallerMemberName] string tag = "")
     {
-        SendLog(text.ToString(), Tag, LogLevel.Warning);
-    }
-
-    public static void Error(object text, [CallerMemberName] string Tag = "")
-    {
-        SendLog(text.ToString(), Tag, LogLevel.Error);
-    }
-
-    public static void Debug(object text, [CallerMemberName] string Tag = "")
-    {
-        SendLog(text.ToString(), Tag, LogLevel.Debug);
-    }
-
-    public static void Fatal(object text, [CallerMemberName] string Tag = "")
-    {
-        SendLog(text.ToString(), Tag, LogLevel.Fatal);
+        SendLog(text.ToString(), tag, LogLevel.Error);
     }
 
     public static void SendLog(string text, string tag = "", LogLevel logLevel = LogLevel.Info)
     {
-        if (logSource == null) return;
+        if (_logSource == null) return;
 
         var time = DateTime.Now.ToString("HH:mm:ss");
         var prefix = string.IsNullOrWhiteSpace(tag) ? "" : $" [{tag}]";
@@ -56,13 +41,10 @@ internal class Logger
 
         switch (logLevel)
         {
-            case LogLevel.Message: logSource.LogMessage(logMessage); break;
-            case LogLevel.Error: logSource.LogError(logMessage); break;
-            case LogLevel.Warning: logSource.LogWarning(logMessage); break;
-            case LogLevel.Fatal: logSource.LogFatal(logMessage); break;
-            case LogLevel.Info: logSource.LogInfo(logMessage); break;
-            case LogLevel.Debug: logSource.LogDebug(logMessage); break;
-            default: System.Console.WriteLine($"{logMessage}"); break;
+            case LogLevel.Message: _logSource.LogMessage(logMessage); break;
+            case LogLevel.Error: _logSource.LogError(logMessage); break;
+            case LogLevel.Warning: _logSource.LogWarning(logMessage); break;
+            default: _logSource.LogInfo(logMessage); break;
         }
     }
 }
