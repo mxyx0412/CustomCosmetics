@@ -1,7 +1,6 @@
 using AmongUs.Data;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using System;
-using System.IO;
 using System.Reflection;
 using UnityEngine;
 
@@ -17,15 +16,11 @@ internal static class Helpers
     public static string GithubUrl(this string url)
     {
         if (IsCN() && (url.Contains("github.com") || url.Contains("githubusercontent.com")) && !url.Contains("ghfast.top"))
-        {
             return "https://ghfast.top/" + url;
-        }
         return url;
     }
 
-#pragma warning disable IDE0380
     public static unsafe Texture2D LoadTextureFromResources(string path)
-#pragma warning restore IDE0380
     {
         try
         {
@@ -35,34 +30,10 @@ internal static class Helpers
             var length = stream!.Length;
             var byteTexture = new Il2CppStructArray<byte>(length);
             _ = stream.Read(new Span<byte>(IntPtr.Add(byteTexture.Pointer, IntPtr.Size * 4).ToPointer(), (int)length));
-            ImageConversion.LoadImage(texture, byteTexture, false);
-            return texture;
-        }
-        catch
-        {
-            //Error("loading texture from resources: " + path);
-        }
-
-        return null;
-    }
-
-    public static Texture2D loadTextureFromDisk(string path)
-    {
-        try
-        {
-            if (File.Exists(path))
-            {
-                var texture = new Texture2D(2, 2, TextureFormat.ARGB32, true);
-                var byteTexture = File.ReadAllBytes(path);
-                ImageConversion.LoadImage(texture, byteTexture, false);
+            if (ImageConversion.LoadImage(texture, byteTexture, false) && texture.width > 0 && texture.height > 0)
                 return texture;
-            }
         }
-        catch
-        {
-            Error("Error loading texture from disk: " + path);
-        }
-
+        catch { }
         return null;
     }
 }
