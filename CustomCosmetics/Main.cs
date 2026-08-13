@@ -1,13 +1,13 @@
 global using HarmonyLib;
-global using static CustomCosmetics.Helpers;
 global using static CustomCosmetics.Logger;
 global using ISystem = Il2CppSystem.Collections.Generic;
 global using Main = CustomCosmetics.CosmeticsManager;
 using BepInEx;
-using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
-using CustomCosmetics.CustomHats;
+using CustomCosmetics.Core;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace CustomCosmetics;
 
@@ -19,39 +19,99 @@ public partial class CosmeticsManager : BasePlugin
     internal static string CustomHatsDir => Path.Combine(CosmeticDir, "CustomHats");
     internal static string CustomVisorsDir => Path.Combine(CosmeticDir, "CustomVisors");
     internal static string CustomPlatesDir => Path.Combine(CosmeticDir, "CustomPlates");
-    internal static string CosmeticsConfigDir => Path.Combine(CosmeticDir, "CosmeticsConfig");
 
-    public static CosmeticsManager Instance { get; set; }
+    public static Main Instance { get; set; }
     public Harmony Harmony { get; } = new(Id);
 
-    internal static string RepositoryUrl => Repository.Value.GithubUrl();
-    public static ConfigEntry<bool> CosmeticsUnlocker { get; set; }
-    public static ConfigEntry<bool> EnableCustomHats { get; set; }
-    public static ConfigEntry<string> Repository { get; set; }
-    public static ConfigEntry<bool> LocalHats { get; set; }
+    internal static YamlConfigManager YamlConfig { get; private set; }
+    internal static ConfigOption<bool> LocalOnly { get; set; }
+    internal static ConfigOption<bool> EnableHats { get; set; }
+    internal static ConfigOption<bool> EnableVisors { get; set; }
+    internal static ConfigOption<bool> EnablePlates { get; set; }
+
+    internal static List<RepositorySource> Repos { get; private set; } = new();
 
     public override void Load()
     {
         SetLogSource(Log);
         Harmony.PatchAll();
 
-        CosmeticsUnlocker = Config.Bind("General", "Cosmetics Unlocker", false,
-            "Unlock all cosmetics in the game, including paid ones.");
-
-        EnableCustomHats = Config.Bind("CustomHats", "Enable Custom Hats", true,
-            "Enable custom hats");
-        LocalHats = Config.Bind("CustomHats", "Local Hats", false,
-            "Enable to only use local hat files without downloading from online repository");
-        Repository = Config.Bind("CustomHats", "Repository Source", "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master",
-            "URL for downloading custom hats when Local Hats is disabled");
+        // config keys: Cosmetics/config.yml
+        YamlConfig = new YamlConfigManager("Cosmetics/config.yml");
+        LocalOnly = YamlConfig.CreateOption("cosmetics.local", false);
+        EnableHats = YamlConfig.CreateOption("hats.enabled", true);
+        EnableVisors = YamlConfig.CreateOption("visors.enabled", false);
+        EnablePlates = YamlConfig.CreateOption("nameplates.enabled", false);
+        YamlConfig.Load();
+        LoadRepos();
 
         Instance = this;
-        LoadModules();
-        Message("CosmeticsManager Loading!");
+
+        foreach (var dir in new[] { CustomHatsDir, CustomVisorsDir, CustomPlatesDir })
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+        var hats = AddComponent<CustomHats.HatsLoader>();
+        var visors = AddComponent<CustomVisors.VisorsLoader>();
+        var plates = AddComponent<CustomPlates.NamePlatesLoader>();
+
+        if (EnableHats.Value) hats.Fetch(Repos.Where(r => r.Hats).ToList());
+        if (EnableVisors.Value) visors.Fetch(Repos.Where(r => r.Visors).ToList());
+        if (EnablePlates.Value) plates.Fetch(Repos.Where(r => r.Nameplates).ToList());
+
+        Message("CosmeticsManager loaded!");
     }
 
-    private static void LoadModules()
+    internal static void LoadRepos()
     {
-        if (EnableCustomHats.Value) CustomHatManager.LoadHats();
+        Repos.Clear();
+        var entries = YamlConfig.ReadNode<List<RepositorySource>>("repositories");
+        if (entries == null || entries.Count == 0)
+        {
+            // fallback: write default repo on empty config
+            YamlConfig.WriteNode("repositories", new List<RepositorySource>
+            {
+                new() { Url = "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master", Hats = true }
+            });
+            entries = YamlConfig.ReadNode<List<RepositorySource>>("repositories");
+        }
+        if (entries == null) return;
+
+        foreach (var entry in entries)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Url)) continue;
+            entry.Url = entry.Url.Trim().TrimEnd('/').GithubUrl();
+            entry.Alias ??= PathFromUrl(entry.Url);
+
+            Repos.Add(entry);
+
+            var t = new List<string>();
+            if (entry.Hats) t.Add("hats");
+            if (entry.Visors) t.Add("visors");
+            if (entry.Nameplates) t.Add("nameplates");
+            Message($"Repository: {entry.Url} [{string.Join(", ", t)}]");
+        }
     }
+
+    private static string PathFromUrl(string url)
+    {
+        using var md5 = System.Security.Cryptography.MD5.Create();
+        var hash = System.BitConverter.ToString(
+            md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(url))).Replace("-", "").ToLowerInvariant();
+        return hash[..8];
+    }
+}
+
+public class RepositorySource
+{
+    public string Url { get; set; }
+    public string Alias { get; set; }
+    public bool Hats { get; set; }
+    public bool Visors { get; set; }
+    public bool Nameplates { get; set; }
+    public string HatsFile { get; set; }
+    public string VisorsFile { get; set; }
+    public string PlatesFile { get; set; }
+    public string HatsDir { get; set; }
+    public string VisorsDir { get; set; }
+    public string PlatesDir { get; set; }
 }

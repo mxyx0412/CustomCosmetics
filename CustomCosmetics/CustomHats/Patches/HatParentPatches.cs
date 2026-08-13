@@ -179,7 +179,7 @@ internal static class HatParentPatches
 
     [HarmonyPatch(nameof(HatParent.PopulateFromViewData))]
     [HarmonyPrefix]
-    private static bool PopulateFromHatViewDataPrefix(HatParent __instance)
+    private static bool PopulateFromViewDataPrefix(HatParent __instance)
     {
         if (!__instance.TryGetCached(out var asset)) return true;
         __instance.UpdateMaterial();
