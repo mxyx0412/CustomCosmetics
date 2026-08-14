@@ -1,80 +1,77 @@
+[**简体中文**](README_CN.md) | English
+
 # CustomCosmetics
 
-Among Us 自定义装饰品加载器。从远程仓库下载并加载自定义**帽子 / 面饰 / 名牌**，支持多仓库、包分组、增量下载。
+An Among Us custom cosmetics loader. Downloads and loads custom **Hats / Visors / Nameplates** from remote repositories, with support for multiple repositories, package grouping, and incremental downloads.
 
-## 安装
+## Installation
 
-1. 将 `CosmeticsManager.dll` 放入 `BepInEx/plugins/`
-2. 启动游戏一次，生成配置文件 `Cosmetics/config.yml`（游戏目录下）
-3. 编辑配置后重启游戏生效
+1. Place `CosmeticsManager.dll` into `BepInEx/plugins/`
+2. Launch the game once to generate the config file `Cosmetics/config.yml` (in the game directory)
+3. Edit the config and restart the game to apply changes
 
-## 配置文件 `Cosmetics/config.yml`
+## Config File `Cosmetics/config.yml`
 
 ```yaml
 cosmetics:
-  # 解锁所有装饰品（含原版商店锁定项）
-  unlocker: false
-  # 仅本地模式：不进行任何网络下载，只读取本地缓存
+  # Local-only mode: no network downloads, reads the local cache only
   local: false
-
 hats:
-  enabled: true       # 启用帽子加载
-
+  enabled: true       # Enable hat loading
 visors:
-  enabled: false      # 启用面饰加载
-
+  enabled: false      # Enable visor loading
 nameplates:
-  enabled: false      # 启用名牌加载
+  enabled: false      # Enable nameplate loading
 
 repositories:
-  # 仓库 URL
+  # Repository URL
   - url: "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master"
-    # 本地缓存目录名（可选）
+    # Local cache directory name (optional)
     alias: "TheOtherHats"
-    # 启用该仓库的哪些类型
+    # Which cosmetic types to load from this repository
     hats: true
     visors: false
     nameplates: false
-    # 自定义配置文件名（可选，默认 CustomHats.json / CustomVisors.json / CustomNamePlates.json）
+    # Custom config file names (optional, defaults: CustomHats.json / CustomVisors.json / CustomNamePlates.json)
     hatsFile: "MyHats.json"
     visorsFile: "MyVisors.json"
     platesFile: "MyPlates.json"
-    # 自定义资源子目录（可选，默认 hats/ visors/ nameplates/）
+    # Custom resource subdirectories (optional, defaults: hats/ visors/ nameplates/)
     hatsDir: "hats"
     visorsDir: "visors"
     platesDir: "nameplates"
 ```
 
-多仓库可配置多个；同一类型会合并加载（按包分组显示）。
+Multiple repositories can be configured; same types are merged and displayed grouped by package.
 
-## 仓库配置格式
+## Repository Config Format
 
-每个仓库根目录放三个配置文件，资源文件放对应子目录（`{url}/{resDir}/{文件名}`）。
+Each repository root holds three config files, with resource files in the matching subdirectories (`{url}/{resDir}/{filename}`).
 
 ### `CustomHats.json`
 
 ```json
 {
-  "packages": [                                        // 包分组定义（可选）
-    { "package": "HatsPack",                           // 包 ID（条目里的 package 引用它）
-      "displayName": "My Hats",                        // 界面显示的包名
-      "priority": 50 }                                 // 排序权重（越大越靠前）
+  "packages": [                                        // package definitions (optional)
+    { "package": "HatsPack",                           // package ID
+      "displayName": "My Hats",                        // package name shown in the UI
+      "priority": 50 }                                 // sort weight (higher = later)
   ],
   "hats": [
     {
-      "name": "Name",                                  // 装扮名
-      "author": "Author",                              // 作者
-      "package": "HatsPack",                           // 所属包
-      "resource": "example.png",                       // 主图
-      "climbresource": "example_climb.png",            // 爬梯动画图（可选）
-      "backresource": "example_back.png",              // 后层图（可选）
-      "flipresource": "example_flip.png",              // 翻转图（可选）
-      "backflipresource": "example_back_flip.png",     // 背后翻转图（可选）
-      "adaptive": false,                               // 自适应颜色
-      "bounce": false,                                 // 弹跳动画
-      "behind": false,                                 // 渲染在人物背后
-      "autoscale": true,                               // 自动缩放至 300px 基准（默认开）
-      "reshasha": "",                                  // 主图 MD5
+      "name": "Name",                                  // cosmetic name
+      "author": "Author",                              // author
+      "package": "HatsPack",                           // owning package ID
+      "resource": "example.png",                       // main image
+      "climbresource": "example_climb.png",            // climbing animation (optional)
+      "backresource": "example_back.png",              // back layer image (optional)
+      "flipresource": "example_flip.png",              // flipped image (optional)
+      "backflipresource": "example_back_flip.png",     // flipped back image (optional)
+      "adaptive": false,                               // match player color
+      "bounce": false,                                 // bouncing animation
+      "behind": false,                                 // render behind the player
+      "autoscale": true,                               // auto-scale to the 300px base (default on)
+      "reshasha": "",                                  // main image MD5
       "reshashb": "",                                  // back MD5
       "reshashc": "",                                  // climb MD5
       "reshashf": "",                                  // flip MD5
@@ -88,20 +85,20 @@ repositories:
 
 ```json
 {
-  "packages": [                                        // 包分组定义（可选）
+  "packages": [                                        // package definitions (optional)
     { "package": "VisorPack", "displayName": "My Visors", "priority": 50 }
   ],
   "visors": [
     {
-      "name": "Name",                                  // 装扮名
-      "author": "Author",                              // 作者
-      "package": "VisorPack",                          // 所属包
-      "resource": "visor.png",                         // 主图
-      "flipresource": "visor_flip.png",                // 翻转图（可选）
-      "behindHats": false,                             // 渲染在帽子后面
-      "adaptive": false,                               // 自适应颜色
-      "autoscale": true,                               // 自动缩放至 300px 基准（默认开
-      "reshasha": "",                                  // 主图 MD5
+      "name": "Name",                                  // cosmetic name
+      "author": "Author",                              // author
+      "package": "VisorPack",                          // owning package ID
+      "resource": "visor.png",                         // main image
+      "flipresource": "visor_flip.png",                // flipped image (optional)
+      "behindHats": false,                             // render behind the hat
+      "adaptive": false,                               // match player color
+      "autoscale": true,                               // auto-scale to the 300px base (default on)
+      "reshasha": "",                                  // main image MD5
       "reshashf": ""                                   // flip MD5
     }
   ]
@@ -112,35 +109,35 @@ repositories:
 
 ```json
 {
-  "packages": [                                        // 包分组定义（可选）
+  "packages": [                                        // package definitions (optional)
     { "package": "PlatePack", "displayName": "My NamePlates", "priority": 50 }
   ],
   "nameplates": [
     {
-      "name": "Name",                                  // 装扮名
-      "author": "Author",                              // 作者
-      "package": "PlatePack",                          // 所属包 
-      "resource": "plate.png",                         // 主图
-      "reshasha": ""                                   // 主图 MD5
+      "name": "Name",                                  // cosmetic name
+      "author": "Author",                              // author
+      "package": "PlatePack",                          // owning package ID
+      "resource": "plate.png",                         // main image
+      "reshasha": ""                                   // main image MD5
     }
   ]
 }
 ```
 
-## 图片规范
+## Image Specifications
 
-| 类型 | 基准尺寸 | 缩放 |
+| Type | Base Size | Scaling |
 |---|---|---|
-| 帽子 | 300×375 | `autoscale` 默认开启，大图自动缩放到基准显示 |
-| 面饰 | 任意 | `autoscale` 默认开启，大图自动缩放到基准显示 |
-| 名牌 | 275×68 | 固定自动缩放 |
+| Hat | 300×375 | `autoscale` on by default, larger images auto-scale to the base display size |
+| Visor | 300×375 | `autoscale` on by default, larger images auto-scale to the base display size |
+| Nameplate | 275×68 | fixed auto-scale |
 
-## 常见问题
+## FAQ
 
-**每次启动都全量下载？**
+**Full re-download on every launch?**
 
-配置文件里的 `reshasha` 等 MD5 字段与文件实际 MD5 不匹配（或缺失）时会判定为"需要下载"。补真实 MD5 后只有变更的文件才会下载。
+When the MD5 fields (`reshasha` etc.) in the config don't match the actual file MD5 (or are missing), the file is considered "needs download". Fill in the real MD5 values so only changed files are downloaded.
 
-## 构建
+## Build
 
-.NET 6.0 + BepInEx IL2CPP，依赖 YamlDotNet。
+.NET 6.0 + BepInEx IL2CPP, depends on YamlDotNet.

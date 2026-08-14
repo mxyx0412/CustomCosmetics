@@ -13,7 +13,7 @@ internal static class NamePlateManagerPatches
     [HarmonyPrefix]
     private static void GetNamePlateByIdPrefix(HatManager __instance)
     {
-        // custom plates injected into allNamePlates so vanilla enumerables (CosmeticsUnlocker) see them
+        // custom plates injected into allNamePlates so vanilla enumerables see them
         if (_isLoaded || CustomNamePlateManager.UnregisteredPlates.Count == 0) return;
 
         var all = __instance.allNamePlates.ToList();

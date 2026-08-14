@@ -78,7 +78,8 @@ internal static class HatsTabPatches
         if (_textTemplate != null)
         {
             var title = UObject.Instantiate(_textTemplate, hatsTab.scroller.Inner);
-            title.transform.localPosition = new Vector3(2.25f, yStart, -1f);
+            title.transform.localPosition = new Vector3(hatsTab.XRange.Lerp(0.5f), yStart + 0.15f * hatsTab.YOffset, -1f);
+            title.alignment = TextAlignmentOptions.Center;
             title.transform.localScale = Vector3.one * 1.5f;
             title.fontSize *= 0.5f;
             title.enableAutoSizing = false;
@@ -86,7 +87,7 @@ internal static class HatsTabPatches
                 ? packageName
                 : (CustomHatManager.PackageDisplayNames.TryGetValue(packageName, out var dn) ? dn : packageName);
             hatsTab.StartCoroutine(Effects.Lerp(0.1f, new Action<float>(_ => { title.SetText(displayName); })));
-            offset -= 0.8f * hatsTab.YOffset;
+            offset -= 1.0f * hatsTab.YOffset;
         }
 
         for (var i = 0; i < hats.Count; i++)

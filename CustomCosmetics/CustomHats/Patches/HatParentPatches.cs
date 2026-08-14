@@ -31,7 +31,7 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool SetHatPrefix(HatParent __instance, int color)
     {
-        if (!__instance.IsCached()) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.ContainsKey(__instance.Hat.name)) return true;
         __instance.viewAsset = null;
         __instance.PopulateFromViewData();
         __instance.SetMaterialColor(color);
@@ -42,7 +42,7 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool UpdateMaterialPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var asset)) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var asset)) return true;
         var extend = __instance.Hat.GetHatExtension();
         if (asset && extend != null && extend.Adaptive)
         {
@@ -108,7 +108,7 @@ internal static class HatParentPatches
     private static bool LateUpdatePrefix(HatParent __instance)
     {
         if (!__instance.Parent || !__instance.Hat) return false;
-        if (!__instance.TryGetCached(out var hatViewData)) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var hatViewData)) return true;
         if (__instance.FrontLayer.sprite != hatViewData.ClimbImage &&
             __instance.FrontLayer.sprite != hatViewData.FloorImage)
         {
@@ -146,7 +146,7 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool SetFloorAnimPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var hatViewData)) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var hatViewData)) return true;
         __instance.BackLayer.enabled = false;
         __instance.FrontLayer.enabled = true;
         __instance.FrontLayer.sprite = hatViewData.FloorImage;
@@ -158,7 +158,7 @@ internal static class HatParentPatches
     private static bool SetIdleAnimPrefix(HatParent __instance, int colorId)
     {
         if (!__instance.Hat) return false;
-        if (!__instance.IsCached()) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.ContainsKey(__instance.Hat.name)) return true;
         __instance.viewAsset = null;
         __instance.PopulateFromViewData();
         __instance.SetMaterialColor(colorId);
@@ -169,7 +169,7 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool SetClimbAnimPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var hatViewData)) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var hatViewData)) return true;
         if (!__instance.options.ShowForClimb) return false;
         __instance.BackLayer.enabled = false;
         __instance.FrontLayer.enabled = true;
@@ -181,7 +181,7 @@ internal static class HatParentPatches
     [HarmonyPrefix]
     private static bool PopulateFromViewDataPrefix(HatParent __instance)
     {
-        if (!__instance.TryGetCached(out var asset)) return true;
+        if (!__instance.Hat || !CustomHatManager.ViewDataCache.TryGetValue(__instance.Hat.name, out var asset)) return true;
         __instance.UpdateMaterial();
 
         var spriteAnimNodeSync = __instance.SpriteSyncNode

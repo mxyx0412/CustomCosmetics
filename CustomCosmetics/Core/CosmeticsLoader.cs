@@ -177,7 +177,7 @@ public class CosmeticsLoader : MonoBehaviour
             var dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-            var task = File.WriteAllBytesAsync(path, www.downloadHandler.data);
+            var task = File.WriteAllBytesAsync(path, www.downloadHandler.GetNativeData().ToArray());
             while (!task.IsCompleted)
                 yield return new WaitForEndOfFrame();
             if (task.IsFaulted)
