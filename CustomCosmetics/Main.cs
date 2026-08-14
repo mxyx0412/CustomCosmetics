@@ -8,7 +8,6 @@ using CustomCosmetics.Core;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace CustomCosmetics;
 
@@ -25,7 +24,6 @@ public partial class CosmeticsManager : BasePlugin
     public Harmony Harmony { get; } = new(Id);
 
     internal static YamlConfigManager YamlConfig { get; private set; }
-    internal static ConfigOption<bool> Unlocker { get; set; }
     internal static ConfigOption<bool> LocalOnly { get; set; }
     internal static ConfigOption<bool> EnableHats { get; set; }
     internal static ConfigOption<bool> EnableVisors { get; set; }
@@ -40,7 +38,6 @@ public partial class CosmeticsManager : BasePlugin
 
         // config keys: Cosmetics/config.yml
         YamlConfig = new YamlConfigManager("Cosmetics/config.yml");
-        Unlocker = YamlConfig.CreateOption("cosmetics.unlocker", false);
         LocalOnly = YamlConfig.CreateOption("cosmetics.local", false);
         EnableHats = YamlConfig.CreateOption("hats.enabled", true);
         EnableVisors = YamlConfig.CreateOption("visors.enabled", false);
@@ -97,16 +94,6 @@ public partial class CosmeticsManager : BasePlugin
 
     private static string PathFromUrl(string url)
     {
-        try
-        {
-            var u = new System.Uri(url);
-            var segs = u.AbsolutePath.Trim('/').Split('/').Where(s => s.Length > 0
-                && s != "master" && s != "main" && s != "HEAD"
-                && !(s.StartsWith("v") && s.Length > 1 && char.IsDigit(s[1]))
-                && !s.All(c => char.IsDigit(c) || c == '.')).ToArray();
-            if (segs.Length > 0) return Regex.Replace(string.Join("_", segs), @"[^a-zA-Z0-9_\-]", "_");
-        }
-        catch { }
         using var md5 = System.Security.Cryptography.MD5.Create();
         var hash = System.BitConverter.ToString(
             md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(url))).Replace("-", "").ToLowerInvariant();

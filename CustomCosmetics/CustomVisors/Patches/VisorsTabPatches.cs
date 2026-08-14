@@ -129,7 +129,8 @@ internal static class VisorsTabPatches
             var title = UObject.Instantiate(_textTemplate, tab.scroller.Inner);
             title.gameObject.SetActive(true);
             title.rectTransform.sizeDelta = new Vector2(5f, 1f);
-            title.transform.localPosition = new Vector3(2.25f, yStart, -1f);
+            title.transform.localPosition = new Vector3(tab.XRange.Lerp(0.5f), yStart + 0.4f * tab.YOffset, -1f);
+            title.alignment = TextAlignmentOptions.Center;
             title.transform.localScale = Vector3.one * 1.5f;
             title.fontSize *= 0.5f;
             title.enableAutoSizing = false;
@@ -137,7 +138,7 @@ internal static class VisorsTabPatches
                 ? pkg
                 : (CustomVisorManager.PackageDisplayNames.TryGetValue(pkg, out var dn) ? dn : pkg);
             tab.StartCoroutine(Effects.Lerp(0.1f, new Action<float>(_ => title.SetText(displayName))));
-            offset -= 0.5f * tab.YOffset;
+            offset -= 0.6f * tab.YOffset;
         }
 
         for (var i = 0; i < visors.Count; i++)
