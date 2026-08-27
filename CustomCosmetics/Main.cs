@@ -3,11 +3,14 @@ global using static CustomCosmetics.Logger;
 global using ISystem = Il2CppSystem.Collections.Generic;
 global using Main = CustomCosmetics.CosmeticsManager;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
 using CustomCosmetics.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 
 namespace CustomCosmetics;
 
@@ -15,7 +18,9 @@ namespace CustomCosmetics;
 [BepInProcess("Among Us.exe")]
 public partial class CosmeticsManager : BasePlugin
 {
-    internal static string CosmeticDir = Path.Combine(Paths.GameRootPath, "Cosmetics");
+    private const string MOD_FOLDER = "CustomCosmetics";
+
+    internal static string CosmeticDir => Path.Combine(Application.persistentDataPath, MOD_FOLDER);
     internal static string CustomHatsDir => Path.Combine(CosmeticDir, "CustomHats");
     internal static string CustomVisorsDir => Path.Combine(CosmeticDir, "CustomVisors");
     internal static string CustomPlatesDir => Path.Combine(CosmeticDir, "CustomPlates");
@@ -23,11 +28,10 @@ public partial class CosmeticsManager : BasePlugin
     public static Main Instance { get; set; }
     public Harmony Harmony { get; } = new(Id);
 
-    internal static YamlConfigManager YamlConfig { get; private set; }
-    internal static ConfigOption<bool> LocalOnly { get; set; }
-    internal static ConfigOption<bool> EnableHats { get; set; }
-    internal static ConfigOption<bool> EnableVisors { get; set; }
-    internal static ConfigOption<bool> EnablePlates { get; set; }
+    internal static ConfigEntry<bool> EnableHats { get; set; }
+    internal static ConfigEntry<bool> EnableVisors { get; set; }
+    internal static ConfigEntry<bool> EnablePlates { get; set; }
+    internal static ConfigEntry<string> Repositories { get; set; }
 
     internal static List<RepositorySource> Repos { get; private set; } = new();
 
@@ -36,13 +40,13 @@ public partial class CosmeticsManager : BasePlugin
         SetLogSource(Log);
         Harmony.PatchAll();
 
-        // config keys: Cosmetics/config.yml
-        YamlConfig = new YamlConfigManager("Cosmetics/config.yml");
-        LocalOnly = YamlConfig.CreateOption("cosmetics.local", false);
-        EnableHats = YamlConfig.CreateOption("hats.enabled", true);
-        EnableVisors = YamlConfig.CreateOption("visors.enabled", false);
-        EnablePlates = YamlConfig.CreateOption("nameplates.enabled", false);
-        YamlConfig.Load();
+        EnableHats = Config.Bind("Cosmetics", "EnableHats", true, "Enable custom hats loading");
+        EnableVisors = Config.Bind("Cosmetics", "EnableVisors", false, "Enable custom visors loading");
+        EnablePlates = Config.Bind("Cosmetics", "EnableNamePlates", false, "Enable custom name plates loading");
+        Repositories = Config.Bind("Cosmetics", "Repositories",
+            "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master|hat",
+            "Repository URLs. Format: url|flags (flags: hat/visor/plate), separate with ;");
+
         LoadRepos();
 
         Instance = this;
@@ -64,31 +68,37 @@ public partial class CosmeticsManager : BasePlugin
     internal static void LoadRepos()
     {
         Repos.Clear();
-        var entries = YamlConfig.ReadNode<List<RepositorySource>>("repositories");
-        if (entries == null || entries.Count == 0)
-        {
-            // fallback: write default repo on empty config
-            YamlConfig.WriteNode("repositories", new List<RepositorySource>
-            {
-                new() { Url = "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master", Hats = true }
-            });
-            entries = YamlConfig.ReadNode<List<RepositorySource>>("repositories");
-        }
-        if (entries == null) return;
+        var reposStr = Repositories.Value;
+        if (string.IsNullOrWhiteSpace(reposStr)) return;
 
+        var entries = reposStr.Split(';', StringSplitOptions.RemoveEmptyEntries);
         foreach (var entry in entries)
         {
-            if (string.IsNullOrWhiteSpace(entry.Url)) continue;
-            entry.Url = entry.Url.Trim().TrimEnd('/').GithubUrl();
-            entry.Alias ??= PathFromUrl(entry.Url);
+            var parts = entry.Trim().Split('|', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) continue;
 
-            Repos.Add(entry);
+            var url = parts[0].Trim().TrimEnd('/').GithubUrl();
+            if (string.IsNullOrWhiteSpace(url)) continue;
+
+            var flags = parts.Length > 1 ? parts[1].ToLower() : "hat";
+            var src = new RepositorySource
+            {
+                Url = url,
+                Alias = PathFromUrl(url),
+                Hats = flags.Contains("hat"),
+                Visors = flags.Contains("visor"),
+                Nameplates = flags.Contains("plate")
+            };
+
+            if (!src.Hats && !src.Visors && !src.Nameplates) src.Hats = true;
+
+            Repos.Add(src);
 
             var t = new List<string>();
-            if (entry.Hats) t.Add("hats");
-            if (entry.Visors) t.Add("visors");
-            if (entry.Nameplates) t.Add("nameplates");
-            Message($"Repository: {entry.Url} [{string.Join(", ", t)}]");
+            if (src.Hats) t.Add("hats");
+            if (src.Visors) t.Add("visors");
+            if (src.Nameplates) t.Add("nameplates");
+            Message($"Repository: {src.Url} [{string.Join(", ", t)}]");
         }
     }
 
@@ -101,17 +111,18 @@ public partial class CosmeticsManager : BasePlugin
     }
 }
 
+[Serializable]
 public class RepositorySource
 {
-    public string Url { get; set; }
-    public string Alias { get; set; }
-    public bool Hats { get; set; }
-    public bool Visors { get; set; }
-    public bool Nameplates { get; set; }
-    public string HatsFile { get; set; }
-    public string VisorsFile { get; set; }
-    public string PlatesFile { get; set; }
-    public string HatsDir { get; set; }
-    public string VisorsDir { get; set; }
-    public string PlatesDir { get; set; }
+    public string Url;
+    public string Alias;
+    public bool Hats;
+    public bool Visors;
+    public bool Nameplates;
+    public string HatsFile;
+    public string VisorsFile;
+    public string PlatesFile;
+    public string HatsDir;
+    public string VisorsDir;
+    public string PlatesDir;
 }

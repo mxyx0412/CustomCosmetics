@@ -13,7 +13,7 @@ public class VisorsLoader : CosmeticsLoader
     protected override string ConfigFor(RepositorySource src) => src.VisorsFile ?? ConfigFile;
     protected override string ResDirFor(RepositorySource src) => src.VisorsDir ?? ResDir;
 
-    protected override void OnConfig(string json, bool local)
+    protected override void OnConfig(string json)
     {
         var r = JsonSerializer.Deserialize<VisorsConfigFile>(json, new JsonSerializerOptions
         {

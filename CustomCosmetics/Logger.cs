@@ -12,7 +12,6 @@ internal class Logger
 
     internal static void SetLogSource(ManualLogSource source)
     {
-        if (ConsoleManager.ConsoleEnabled) System.Console.OutputEncoding = Encoding.UTF8;
         _logSource = source;
     }
 

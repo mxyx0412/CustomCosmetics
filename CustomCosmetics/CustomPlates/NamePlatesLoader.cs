@@ -13,7 +13,7 @@ public class NamePlatesLoader : CosmeticsLoader
     protected override string ConfigFor(RepositorySource src) => src.PlatesFile ?? ConfigFile;
     protected override string ResDirFor(RepositorySource src) => src.PlatesDir ?? ResDir;
 
-    protected override void OnConfig(string json, bool local)
+    protected override void OnConfig(string json)
     {
         var r = JsonSerializer.Deserialize<NamePlatesConfigFile>(json, new JsonSerializerOptions
         {

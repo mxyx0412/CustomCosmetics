@@ -23,7 +23,7 @@ public class CosmeticsLoader : MonoBehaviour
     [HideFromIl2Cpp] protected virtual string ConfigFile => "Cosmetics.json";
     [HideFromIl2Cpp] protected virtual string ResDir => "";
     [HideFromIl2Cpp] protected virtual string LocalDir => "";
-    [HideFromIl2Cpp] protected virtual void OnConfig(string json, bool local) { }
+    [HideFromIl2Cpp] protected virtual void OnConfig(string json) { }
     [HideFromIl2Cpp] protected virtual List<string> MissingFiles() { return new List<string>(); }
     [HideFromIl2Cpp] protected virtual string ConfigFor(RepositorySource src) => ConfigFile;
     [HideFromIl2Cpp] protected virtual string ResDirFor(RepositorySource src) => ResDir;
@@ -60,7 +60,7 @@ public class CosmeticsLoader : MonoBehaviour
     {
         if (_busy) return;
         _sources = sources ?? new List<RepositorySource>();
-        if (_sources.Count == 0 && !Main.LocalOnly.Value) { Warn($"No repos for {Kind}"); return; }
+        if (_sources.Count == 0) { Warn($"No repos for {Kind}"); return; }
         this.StartCoroutine(CoFetch());
     }
 
@@ -68,7 +68,6 @@ public class CosmeticsLoader : MonoBehaviour
     private IEnumerator CoFetch()
     {
         _busy = true;
-        if (Main.LocalOnly.Value) { LoadLocal(); _busy = false; yield break; }
 
         foreach (var src in _sources)
         {
@@ -78,28 +77,6 @@ public class CosmeticsLoader : MonoBehaviour
             yield return CoFetchConfig(src);
         }
         _busy = false;
-    }
-
-    [HideFromIl2Cpp]
-    private void LoadLocal()
-    {
-        if (!Directory.Exists(LocalDir)) { Warn($"No {Kind} dir"); return; }
-
-        var files = Directory.GetFiles(LocalDir, "*.json");
-        if (files.Length == 0) { Warn($"No {Kind} configs"); return; }
-
-        var prefix = $"{Path.GetFileNameWithoutExtension(ConfigFile)}_";
-        foreach (var f in files)
-        {
-            var name = Path.GetFileNameWithoutExtension(f);
-            Alias = name.StartsWith(prefix) ? name.Substring(prefix.Length) : name;
-            try
-            {
-                var json = File.ReadAllText(f);
-                OnConfig(json, local: true);
-            }
-            catch (Exception ex) { Warn($"{Path.GetFileName(f)}: {ex.Message}"); }
-        }
     }
 
     [HideFromIl2Cpp]
@@ -128,8 +105,8 @@ public class CosmeticsLoader : MonoBehaviour
             if (!Directory.Exists(LocalDir)) Directory.CreateDirectory(LocalDir);
             var path = ConfigPath(src.Alias);
             File.WriteAllText(path, www.downloadHandler.text);
-            OnConfig(File.ReadAllText(path), local: false);
-            shouldDownload = _ok && !Main.LocalOnly.Value;
+            OnConfig(File.ReadAllText(path));
+            shouldDownload = _ok;
         }
         catch (Exception ex) { _ok = false; Warn($"Parse {Kind} [{src.Alias}]: {ex.Message}"); }
         if (shouldDownload) { var list = MissingFiles(); if (list.Count > 0) yield return CoDownload(list); }
