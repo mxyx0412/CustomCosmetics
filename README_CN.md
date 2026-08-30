@@ -5,42 +5,21 @@ Among Us 自定义装饰品加载器。从远程仓库下载并加载自定义**
 ## 安装
 
 1. 将 `CosmeticsManager.dll` 放入 `BepInEx/plugins/`
-2. 启动游戏一次，生成配置文件 `Cosmetics/config.yml`（游戏目录下）
+2. 启动游戏一次，生成配置文件 `BepInEx/config/com.mxyx.cosmetics.cfg`
 3. 编辑配置后重启游戏生效
 
-## 配置文件 `Cosmetics/config.yml`
+## 配置 `BepInEx/config/com.mxyx.cosmetics.cfg`
 
-```yaml
-cosmetics:
-  # 仅本地模式：不进行任何网络下载，只读取本地缓存
-  local: false
-hats:
-  enabled: true       # 启用帽子加载
-visors:
-  enabled: false      # 启用面饰加载
-nameplates:
-  enabled: false      # 启用名牌加载
+| 配置项 | 默认值 | 说明 |
+|---|---|---|
+| `EnableHats` | `true` | 启用帽子加载 |
+| `EnableVisors` | `false` | 启用面饰加载 |
+| `EnableNamePlates` | `false` | 启用名牌加载 |
+| `Repositories` | `https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master\|hat` | 仓库列表 |
 
-repositories:
-  # 仓库 URL
-  - url: "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master"
-    # 本地缓存目录名（可选）
-    alias: "TheOtherHats"
-    # 启用该仓库的哪些类型
-    hats: true
-    visors: false
-    nameplates: false
-    # 自定义配置文件名（可选，默认 CustomHats.json / CustomVisors.json / CustomNamePlates.json）
-    hatsFile: "MyHats.json"
-    visorsFile: "MyVisors.json"
-    platesFile: "MyPlates.json"
-    # 自定义资源子目录（可选，默认 hats/ visors/ nameplates/）
-    hatsDir: "hats"
-    visorsDir: "visors"
-    platesDir: "nameplates"
-```
+`Repositories` 格式：`url|flags;url|flags`，`flags` 为 `hat` / `visor` / `plate`（不写默认 `hat`），多个仓库用 `;` 分隔。
 
-多仓库可配置多个；同一类型会合并加载（按包分组显示）。
+装饰品缓存目录：`{persistentDataPath}/CustomCosmetics`（Android 为 `Android/data/<包名>/files/CustomCosmetics`），子目录 `CustomHats/ CustomVisors/ CustomNamePlates/`。
 
 ## 仓库配置格式
 
@@ -138,4 +117,4 @@ repositories:
 
 ## 构建
 
-.NET 6.0 + BepInEx IL2CPP，依赖 YamlDotNet。
+.NET 6.0 + BepInEx IL2CPP

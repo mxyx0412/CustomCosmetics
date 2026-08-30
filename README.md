@@ -7,42 +7,21 @@ An Among Us custom cosmetics loader. Downloads and loads custom **Hats / Visors 
 ## Installation
 
 1. Place `CosmeticsManager.dll` into `BepInEx/plugins/`
-2. Launch the game once to generate the config file `Cosmetics/config.yml` (in the game directory)
+2. Launch the game once to generate the config file `BepInEx/config/com.mxyx.cosmetics.cfg`
 3. Edit the config and restart the game to apply changes
 
-## Config File `Cosmetics/config.yml`
+## Config `BepInEx/config/com.mxyx.cosmetics.cfg`
 
-```yaml
-cosmetics:
-  # Local-only mode: no network downloads, reads the local cache only
-  local: false
-hats:
-  enabled: true       # Enable hat loading
-visors:
-  enabled: false      # Enable visor loading
-nameplates:
-  enabled: false      # Enable nameplate loading
+| Option | Default | Description |
+|---|---|---|
+| `EnableHats` | `true` | Enable hat loading |
+| `EnableVisors` | `false` | Enable visor loading |
+| `EnableNamePlates` | `false` | Enable nameplate loading |
+| `Repositories` | `https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master\|hat` | Repository list |
 
-repositories:
-  # Repository URL
-  - url: "https://raw.githubusercontent.com/TheOtherRolesAU/TheOtherHats/master"
-    # Local cache directory name (optional)
-    alias: "TheOtherHats"
-    # Which cosmetic types to load from this repository
-    hats: true
-    visors: false
-    nameplates: false
-    # Custom config file names (optional, defaults: CustomHats.json / CustomVisors.json / CustomNamePlates.json)
-    hatsFile: "MyHats.json"
-    visorsFile: "MyVisors.json"
-    platesFile: "MyPlates.json"
-    # Custom resource subdirectories (optional, defaults: hats/ visors/ nameplates/)
-    hatsDir: "hats"
-    visorsDir: "visors"
-    platesDir: "nameplates"
-```
+`Repositories` format: `url|flags;url|flags`, `flags` is `hat` / `visor` / `plate` (defaults to `hat`), separate multiple repositories with `;`.
 
-Multiple repositories can be configured; same types are merged and displayed grouped by package.
+Cosmetics cache directory: `{persistentDataPath}/CustomCosmetics` (`Android/data/<package>/files/CustomCosmetics` on Android), with subdirectories `CustomHats/ CustomVisors/ CustomNamePlates/`.
 
 ## Repository Config Format
 
@@ -140,4 +119,4 @@ When the MD5 fields (`reshasha` etc.) in the config don't match the actual file 
 
 ## Build
 
-.NET 6.0 + BepInEx IL2CPP, depends on YamlDotNet.
+.NET 6.0 + BepInEx IL2CPP
